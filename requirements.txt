@@ -1,4 +1,5 @@
-fastapi==0.111.0
-uvicorn==0.30.1
-yt-dlp==2024.5.27
-pydantic==2.7.3
+fastapi
+uvicorn
+pydantic
+imageio-ffmpeg
+git+https://github.com/yt-dlp/yt-dlp.git
