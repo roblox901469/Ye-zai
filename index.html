@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>夜載 YeZai - 極速全網影音偵測下載器</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        .glow-effect {
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+        }
+        .glow-effect:focus-within {
+            box-shadow: 0 0 35px rgba(129, 140, 248, 0.4);
+        }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+    <!-- Header Navigation -->
+    <header class="border-b border-gray-800/80 glass-panel sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid font-bold text-white text-xl fa-moon"></i>
+                </div>
+                <span class="text-2xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400">夜載 <span class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">v1.0 Pro</span></span>
+            </div>
+            <div class="flex items-center space-x-4 text-sm text-gray-400">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 核心引擎監控中</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto px-4 py-12 flex-1 w-full">
+        <!-- Hero Section -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
+                貼上網址，自動偵測影片與畫質
+            </h1>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                支援 YouTube, Bilibili, X (Twitter), TikTok 及網頁內部 HTML5 `<video>` 與 HLS (m3u8) 串流解析。
+            </p>
+        </div>
+
+        <!-- URL Input Card -->
+        <div class="glass-panel p-2 md:p-3 rounded-2xl glow-effect transition-all duration-300 mb-8">
+            <form id="urlForm" class="flex flex-col md:flex-row gap-2">
+                <div class="relative flex-1 flex items-center">
+                    <i class="fa-solid fa-link absolute left-4 text-gray-400 text-lg"></i>
+                    <input type="url" id="videoUrl" required placeholder="請貼上影片網址 (例如：https://www.youtube.com/watch?v=...)" 
+                           class="w-full bg-gray-900/80 text-white pl-12 pr-4 py-4 rounded-xl border border-gray-700/50 focus:outline-none focus:border-indigo-500 placeholder-gray-500 text-base">
+                </div>
+                <button type="submit" id="submitBtn" 
+                        class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold px-8 py-4 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200 flex items-center justify-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>開始解析</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Status & Progress Indicator -->
+        <div id="statusContainer" class="hidden glass-panel p-6 rounded-2xl mb-8">
+            <div class="flex items-center gap-3 text-indigo-400 font-medium mb-3">
+                <i class="fa-solid fa-circle-notch animate-spin text-xl"></i>
+                <span id="statusText">正在連線至目標伺服器進行深度掃描...</span>
+            </div>
+            <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full w-1/3 transition-all duration-500"></div>
+            </div>
+        </div>
+
+        <!-- Video Detection Result -->
+        <div id="resultContainer" class="hidden glass-panel rounded-2xl overflow-hidden border border-gray-800">
+            <div class="p-6 border-b border-gray-800/80 flex flex-col md:flex-row gap-6">
+                <!-- Video Thumbnail -->
+                <div class="w-full md:w-64 h-40 rounded-xl overflow-hidden relative group bg-gray-800 flex-shrink-0">
+                    <img id="videoThumb" src="" alt="Thumbnail" class="w-full h-full object-cover">
+                    <div class="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-xs font-mono text-white" id="videoDuration">00:00</div>
+                </div>
+                <!-- Video Metadata -->
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <span id="uploaderBadge" class="inline-block px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-2">平台來源</span>
+                        <h2 id="videoTitle" class="text-xl font-bold text-white mb-2 line-clamp-2">影片標題讀取中...</h2>
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        系統已自動過濾可下載的媒體軌。選擇目標畫質後點擊即可下載。
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resolution Options Table -->
+            <div class="p-6">
+                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-400"></i> 可用畫質與格式選項
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-800/50 text-gray-400 font-medium border-b border-gray-700/50">
+                            <tr>
+                                <th class="p-3 rounded-l-lg">畫質 / 解析度</th>
+                                <th class="p-3">格式</th>
+                                <th class="p-3">預估大小</th>
+                                <th class="p-3 text-right rounded-r-lg">動作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="formatList" class="divide-y divide-gray-800/60">
+                            <!-- Dynamic Content Injected Here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800/80 py-6 text-center text-gray-500 text-sm">
+        <p>© 2026 夜載 YeZai. 僅供個人學習與測試使用。</p>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // 設定雲端 API 地址 (部署後請修改為您的 API 網址，如: https://yezai-api.onrender.com)
+        const API_BASE_URL = "http://localhost:8000"; 
+
+        const urlForm = document.getElementById('urlForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusContainer = document.getElementById('statusContainer');
+        const statusText = document.getElementById('statusText');
+        const progressBar = document.getElementById('progressBar');
+        const resultContainer = document.getElementById('resultContainer');
+
+        urlForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) return;
+
+            // UI 狀態切換
+            resultContainer.classList.add('hidden');
+            statusContainer.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50');
+
+            statusText.innerText = "正在分析網頁結構與探測影音串流 (m3u8 / MP4)...";
+            progressBar.style.width = "40%";
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                progressBar.style.width = "80%";
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || "無法找到有效影片資源");
+                }
+
+                const data = await response.json();
+                progressBar.style.width = "100%";
+
+                setTimeout(() => {
+                    statusContainer.classList.add('hidden');
+                    renderResult(data);
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50');
+                }, 400);
+
+            } catch (error) {
+                alert(`[夜載] 解析失敗：${error.message}`);
+                statusContainer.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50');
+            }
+        });
+
+        function renderResult(data) {
+            document.getElementById('videoThumb').src = data.thumbnail || 'https://via.placeholder.com/640x360?text=No+Thumbnail';
+            document.getElementById('videoTitle').innerText = data.title || "未知影片";
+            document.getElementById('uploaderBadge').innerText = data.uploader || "未知平台";
+            
+            const durationSec = data.duration_sec || 0;
+            const mins = Math.floor(durationSec / 60);
+            const secs = Math.floor(durationSec % 60);
+            document.getElementById('videoDuration').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+            const formatList = document.getElementById('formatList');
+            formatList.innerHTML = '';
+
+            if (!data.formats || data.formats.length === 0) {
+                formatList.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">未在此頁面偵測到高畫質影片軌</td></tr>`;
+            } else {
+                data.formats.forEach(f => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-800/30 transition";
+                    
+                    const badgeColor = f.resolution.includes('1080') || f.resolution.includes('4K') 
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+                        : 'bg-gray-700/50 text-gray-300 border-gray-600/30';
+
+                    tr.innerHTML = `
+                        <td class="p-3 font-medium">
+                            <span class="px-2 py-0.5 rounded text-xs border ${badgeColor}">${f.resolution}</span>
+                        </td>
+                        <td class="p-3 text-gray-400 font-mono text-xs uppercase">${f.ext}</td>
+                        <td class="p-3 text-gray-400 font-mono text-xs">${f.filesize_mb > 0 ? f.filesize_mb + ' MB' : '串流格式'}</td>
+                        <td class="p-3 text-right">
+                            <button onclick="triggerDownload('${f.format_id}')" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition shadow-md">
+                                <i class="fa-solid fa-download mr-1"></i> 下載檔案
+                            </button>
+                        </td>
+                    `;
+                    formatList.appendChild(tr);
+                });
+            }
+
+            resultContainer.classList.remove('hidden');
+        }
+
+        function triggerDownload(formatId) {
+            alert(`正在請求後端封包下載 [Format ID: ${formatId}]...`);
+        }
+    </script>
+</body>
+</html>
